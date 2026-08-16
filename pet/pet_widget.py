@@ -22,16 +22,17 @@ from PyQt6.QtWidgets import QWidget
 
 from pet.pet_engine import PetEngine
 
-# ---------- 参考图配色 ----------
-C_BODY = QColor(22, 24, 30)            # 纯黑（略带蓝调柔和）
-C_BODY_HI = QColor(70, 76, 90)         # 高光
-C_BELLY = QColor(252, 252, 254)        # 白肚皮
-C_BEAK = QColor(248, 180, 20)          # 黄色嘴喙
-C_BEAK_DARK = QColor(225, 150, 10)
-C_SCARF = QColor(228, 46, 52)          # 红围巾
-C_SCARF_DARK = QColor(190, 32, 38)
+# ---------- 参考图配色（GLM vision_dominant_colors 实测） ----------
+C_BODY = QColor(0, 0, 0)             # 纯黑 #000000（头/背/翅膀）
+C_BODY_HI = QColor(70, 76, 90)       # 高光
+C_BELLY = QColor(253, 253, 253)      # 白 #FDFDFD
+C_BELLY_SHADE = QColor(243, 243, 242)  # 浅灰阴影 #F3F3F2
+C_BEAK = QColor(239, 176, 41)        # 黄 #EFB029（嘴喙/脚）
+C_BEAK_DARK = QColor(196, 132, 24)
+C_SCARF = QColor(232, 25, 34)        # 红 #E81922
+C_SCARF_DARK = QColor(83, 11, 13)    # 暗红阴影 #530B0D
 C_BLUSH = QColor(255, 140, 140, 170)
-C_OUTLINE = QColor(15, 17, 22)
+C_OUTLINE = QColor(0, 0, 0)
 C_WHITE = QColor(255, 255, 255)
 C_BUBBLE = QColor(255, 255, 255, 235)
 C_BUBBLE_BORDER = QColor(200, 170, 130)
@@ -152,14 +153,14 @@ class PetWidget(QWidget):
     # ---------- 身体（大圆头 + 小身体的整体轮廓） ----------
     def _body_path(self) -> QPainterPath:
         path = QPainterPath()
-        # 从头顶开始，右侧向下（头部宽、身体渐窄）
-        path.moveTo(120, 12)
-        path.cubicTo(120 + 66, 12, 186, 56, 186, 108)      # 头右侧
-        path.cubicTo(186, 150, 180, 186, 178, 200)         # 肩
-        path.cubicTo(172, 222, 148, 232, 120, 232)         # 右下收尾
-        path.cubicTo(92, 232, 68, 222, 62, 200)            # 左下
-        path.cubicTo(60, 186, 54, 150, 54, 108)            # 肩
-        path.cubicTo(54, 56, 120 - 66, 12, 120, 12)        # 头左侧
+        # 从头顶开始，右侧向下（大圆头、圆润小身体）
+        path.moveTo(120, 10)
+        path.cubicTo(120 + 68, 10, 190, 56, 190, 110)      # 头右侧
+        path.cubicTo(190, 156, 184, 190, 180, 206)         # 肩
+        path.cubicTo(174, 228, 150, 238, 120, 238)         # 右下收尾（更圆）
+        path.cubicTo(90, 238, 66, 228, 60, 206)            # 左下
+        path.cubicTo(56, 190, 50, 156, 50, 110)            # 肩
+        path.cubicTo(50, 56, 120 - 68, 10, 120, 10)        # 头左侧
         path.closeSubpath()
         return path
 
@@ -173,42 +174,44 @@ class PetWidget(QWidget):
         p.setBrush(QColor(70, 76, 90, 150))
         p.drawEllipse(QRectF(88, 34, 16, 40))
 
-        # 白肚皮（下半部）
+        # 白肚皮（下半部）+ 浅灰阴影
         p.setBrush(C_BELLY)
         p.setPen(QPen(C_OUTLINE, 2))
-        p.drawEllipse(QRectF(98, 162, 44, 56))
-        # 肚皮高光
+        p.drawEllipse(QRectF(96, 158, 48, 62))
         p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(255, 255, 255, 120))
-        p.drawEllipse(QRectF(108, 176, 14, 26))
+        p.setBrush(C_BELLY_SHADE)
+        p.drawEllipse(QRectF(108, 190, 24, 24))
 
     # ---------- 红围巾 ----------
     def _draw_scarf(self, p: QPainter, behavior: str, t: float) -> None:
-        # 脖间围巾带
+        # 脖间围巾带（参考图: 环绕脖子、左侧有装饰片）
         p.setPen(QPen(C_SCARF_DARK, 2))
         p.setBrush(C_SCARF)
-        p.drawRoundedRect(QRectF(66, 108, 108, 18), 8, 8)
-        # 胸前垂尾（开心时摆动）
+        p.drawRoundedRect(QRectF(64, 112, 112, 18), 8, 8)
+        # 左侧装饰片
+        p.drawRoundedRect(QRectF(58, 116, 12, 10), 4, 4)
+        # 胸前垂尾（参考图垂到身体 71% 高度；开心时摆动）
         sway = math.sin(t * 5.0) * 4.0 if behavior == "happy" else math.sin(t * 2.0) * 1.5
-        tail = QPainterPath(QPointF(118, 126))
-        tail.lineTo(124 + sway, 162)
-        tail.lineTo(112 + sway, 162)
+        tail = QPainterPath(QPointF(120, 130))
+        tail.lineTo(128 + sway, 192)
+        tail.lineTo(112 + sway, 192)
         tail.closeSubpath()
         p.drawPath(tail)
-        # 穗
-        p.drawLine(QPointF(124 + sway, 162), QPointF(127 + sway, 169))
-        p.drawLine(QPointF(118, 162), QPointF(117 + sway, 169))
-        p.drawLine(QPointF(112 + sway, 162), QPointF(109 + sway, 169))
+        # 垂尾暗红描边/阴影
+        p.setPen(QPen(C_SCARF_DARK, 2))
+        p.drawLine(QPointF(128 + sway, 192), QPointF(131 + sway, 200))
+        p.drawLine(QPointF(120, 192), QPointF(119 + sway, 200))
+        p.drawLine(QPointF(112 + sway, 192), QPointF(109 + sway, 200))
 
     # ---------- 面部（黑头 + 白色大眼 + 黄色嘴喙） ----------
     def _draw_face(self, p: QPainter, behavior: str, t: float) -> None:
         blink = self._is_blinking(behavior, t)
 
-        # 腮红
+        # 腮红（参考图脸颊有红晕）
         p.setBrush(C_BLUSH)
         p.setPen(Qt.PenStyle.NoPen)
-        p.drawEllipse(QRectF(70, 78, 20, 12))
-        p.drawEllipse(QRectF(150, 78, 20, 12))
+        p.drawEllipse(QRectF(66, 78, 24, 14))
+        p.drawEllipse(QRectF(150, 78, 24, 14))
 
         # 眼睛：大白圆 + 黑瞳孔
         eye_r = 16 if behavior == "surprised" else 14
@@ -252,14 +255,15 @@ class PetWidget(QWidget):
             p.drawLine(QPointF(68, 32), QPointF(92, 40))
             p.drawLine(QPointF(136, 32), QPointF(108, 40))
 
-        # 黄色嘴喙（菱形）
+        # 黄色嘴喙（圆润倒三角，参考图样式）
         p.setPen(QPen(C_BEAK_DARK, 2))
         p.setBrush(C_BEAK)
         beak = QPainterPath()
-        beak.moveTo(120, 76)
-        beak.lineTo(130, 88)
-        beak.lineTo(120, 100)
-        beak.lineTo(110, 88)
+        beak.moveTo(120, 78)
+        beak.cubicTo(126, 78, 130, 84, 128, 90)
+        beak.cubicTo(127, 94, 123, 97, 120, 97)
+        beak.cubicTo(117, 97, 113, 94, 112, 90)
+        beak.cubicTo(110, 84, 114, 78, 120, 78)
         beak.closeSubpath()
         p.drawPath(beak)
 
