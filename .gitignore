@@ -33,3 +33,6 @@ coverage/
 
 # Logs
 *.log
+
+# Local pip cache (venv install)
+.pip-cache/

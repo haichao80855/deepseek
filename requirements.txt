@@ -1,0 +1,9 @@
+# deepseek 依赖（M1: 摄像头 + 表情识别）
+opencv-python>=4.9
+onnxruntime>=1.17
+numpy>=1.26
+
+# 后续里程碑
+# PyQt6>=6.6      # M2 桌面宠物窗口
+# mediapipe>=0.10 # M2 人脸关键点（可选升级）
+# pyttsx3>=2.9    # M4 语音安慰

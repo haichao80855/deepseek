@@ -91,15 +91,43 @@ deepseek/
 
 ## 六、里程碑
 
-| 阶段 | 内容 | 验收标准 | 预估 |
-|---|---|---|---|
-| **M1** | 摄像头采集 + 表情识别 | 终端实时打印情绪标签，附置信度 | 半天 |
-| **M2** | PyQt6 透明宠物窗口 + 帧动画 | 桌面出现宠物，可手动切换行为 | 1 天 |
-| **M3** | 情绪驱动宠物联动 + 气泡文案 | 摄像头识别到情绪，宠物自动切换行为 | 1 天 |
-| **M4** | TTS 语音安抚 | 难过/生气时宠物开口安慰 | 半天 |
-| **M5** | 打磨：动画美化、开机自启、打包 .app | 双击即用的成品 | 按需 |
+| 阶段 | 内容 | 验收标准 | 预估 | 状态 |
+|---|---|---|---|---|
+| **M1** | 摄像头采集 + 表情识别 | 终端实时打印情绪标签，附置信度 | 半天 | ✅ 已完成 |
+| **M2** | PyQt6 透明宠物窗口 + 帧动画 | 桌面出现宠物，可手动切换行为 | 1 天 | ⬜ |
+| **M3** | 情绪驱动宠物联动 + 气泡文案 | 摄像头识别到情绪，宠物自动切换行为 | 1 天 | ⬜ |
+| **M4** | TTS 语音安抚 | 难过/生气时宠物开口安慰 | 半天 | ⬜ |
+| **M5** | 打磨：动画美化、开机自启、打包 .app | 双击即用的成品 | 按需 | ⬜ |
 
 每个里程碑完成即 commit，push 到 GitHub 备份。
+
+## 六·五、当前进度与运行方式
+
+### M1 已完成 ✅
+
+- `emotion/capture.py` — OpenCV 摄像头采集
+- `emotion/detector.py` — YuNet 人脸检测 + FER+ 表情识别（8 类情绪）
+- `emotion/smoother.py` — EMA 情绪平滑（抑制抖动）
+- `main.py` — 终端实时情绪 Demo
+- 模型已就位：`emotion/models/emotion-ferplus-8.onnx` + `face_detection_yunet_2023mar.onnx`
+
+**运行 M1 Demo：**
+
+```bash
+.venv/bin/python main.py            # 带调试窗口（人脸框 + 情绪标签），按 q 退出
+.venv/bin/python main.py --headless # 纯终端输出
+```
+
+首次运行会弹出 macOS 摄像头授权框，允许即可（系统设置 → 隐私与安全性 → 摄像头）。
+
+### 安装依赖
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+> 本机 pip 默认镜像（清华）不可用时，可加 `--index-url https://mirrors.aliyun.com/pypi/simple/`。
 
 ## 七、macOS 权限与隐私
 
