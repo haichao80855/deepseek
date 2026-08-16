@@ -84,9 +84,17 @@ class EmotionDetector:
 
         best = int(np.argmax(faces[:, -1]))  # 取置信度最高的人脸
         x, y, fw, fh = faces[best][:4].astype(int)
+
+        # YuNet 返回的框可能超出画面边界（人脸贴近镜头/画面边缘时），
+        # 直接裁剪会得到空数组导致 cvtColor 报错，这里把框裁剪到画面内。
+        x0, y0 = max(0, x), max(0, y)
+        x1, y1 = min(w, x + fw), min(h, y + fh)
+        if x1 <= x0 or y1 <= y0:
+            return None  # 人脸框完全在画面外，跳过本帧
+
         landmarks = faces[best][4:14].reshape(5, 2)
         score = float(faces[best][-1])
-        return frame_bgr[y : y + fh, x : x + fw], {
+        return frame_bgr[y0:y1, x0:x1], {
             "bbox": (x, y, fw, fh),
             "landmarks": landmarks,
             "score": score,
@@ -95,6 +103,8 @@ class EmotionDetector:
     # ---------- 表情识别 ----------
     def predict(self, face_bgr: np.ndarray):
         """对单张人脸做表情分类，返回 (情绪英文名, 置信度, 8类概率数组)。"""
+        if face_bgr is None or face_bgr.size == 0:
+            raise ValueError("predict 收到空的人脸图像，请检查人脸检测返回的裁剪框")
         gray = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2GRAY)
         resized = cv2.resize(gray, (64, 64), interpolation=cv2.INTER_AREA)
         blob = resized.astype(np.float32).reshape(1, 1, 64, 64)
