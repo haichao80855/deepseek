@@ -96,9 +96,30 @@ class EmotionDetector:
         score = float(faces[best][-1])
         return frame_bgr[y0:y1, x0:x1], {
             "bbox": (x, y, fw, fh),
+            "crop_origin": (x0, y0),
             "landmarks": landmarks,
             "score": score,
         }
+
+    # ---------- 人脸对齐 ----------
+    def _align_face(self, face_bgr: np.ndarray, landmarks, crop_origin) -> np.ndarray:
+        """按双眼连线把脸旋转摆正，提升 FER+ 模型的识别准确率。
+
+        FER+ 模型在近似对齐的人脸上训练；直接裁切原始画面（歪头/侧倾）
+        会导致表情特征对不上，输出几乎恒为 neutral。
+        """
+        pts = landmarks.astype(np.float32) - np.array(crop_origin, dtype=np.float32)
+        left_eye, right_eye = pts[0], pts[1]
+        angle = float(np.degrees(np.arctan2(
+            right_eye[1] - left_eye[1], right_eye[0] - left_eye[0]
+        )))
+        h, w = face_bgr.shape[:2]
+        m = cv2.getRotationMatrix2D((w / 2.0, h / 2.0), angle, 1.0)
+        return cv2.warpAffine(
+            face_bgr, m, (w, h),
+            flags=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_REPLICATE,
+        )
 
     # ---------- 表情识别 ----------
     def predict(self, face_bgr: np.ndarray):
@@ -106,6 +127,9 @@ class EmotionDetector:
         if face_bgr is None or face_bgr.size == 0:
             raise ValueError("predict 收到空的人脸图像，请检查人脸检测返回的裁剪框")
         gray = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2GRAY)
+        # CLAHE 直方图均衡：显著提升 FER+ 模型对真实摄像头画面的识别率
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        gray = clahe.apply(gray)
         resized = cv2.resize(gray, (64, 64), interpolation=cv2.INTER_AREA)
         blob = resized.astype(np.float32).reshape(1, 1, 64, 64)
         scores = self._sess.run([self._output_name], {self._input_name: blob})[0][0]
@@ -131,6 +155,8 @@ class EmotionDetector:
         if det is None:
             return None
         face, meta = det
+        # 先按双眼对齐再识别，模型准确率显著提升
+        face = self._align_face(face, meta["landmarks"], meta["crop_origin"])
         emotion, confidence, probs = self.predict(face)
         return {
             "emotion": emotion,

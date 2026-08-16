@@ -70,17 +70,22 @@ class PetWindow(QWidget):
 
     # ---------- M3: 情绪驱动 ----------
     def apply_emotion(self, emotion: str) -> None:
-        """收到平滑后的情绪键，切换宠物行为。"""
+        """收到平滑后的情绪键，切换宠物行为并给出可见反馈。"""
+        zh = EMOTION_ZH.get(emotion, emotion)
         behavior = self._engine.apply_emotion(emotion)
         if behavior:
-            zh = EMOTION_ZH.get(emotion, emotion)
             print(f"😊 情绪: {zh} → 行为: {behavior}")
-            # 切换后由 PetWidget._tick 自动弹气泡文案
+            # 行为切换后由 PetWidget._tick 自动弹行为文案
+        else:
+            # 行为没变（如连续"平静"）也要让宠物有反应，避免"没动静"的观感
+            self._pet._show_msg(f"我看到你的心情：{zh}", 2.5)
         self._pet.update()
 
     def on_face_status(self, visible: bool) -> None:
         """人脸离开/回来提示。"""
-        if not visible:
+        if visible:
+            self._pet._show_msg("我看到你啦！", 2.5)
+        else:
             self._pet._show_msg("咦？你去哪啦？", 3.0)
 
     # ---------- 键盘 ----------
