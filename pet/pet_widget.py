@@ -1,14 +1,15 @@
-"""宠物绘制组件 —— Q 版企鹅（借鉴腾讯 QQ 企鹅风格）。
+"""宠物绘制组件 —— 还原参考图的 Q 版企鹅。
 
-用 QPainter 手绘一只圆滚滚的企鹅：蛋形深色身体、白色圆脸和肚皮、
-橙色嘴喙、红色围巾、小翅膀与脚丫，带帧动画（QTimer 驱动）和气泡。
+配色与比例完全参照参考图：
+- 纯黑头背 + 白色大圆眼睛 + 黄色嘴喙 + 红围巾 + 白肚皮 + 黄色脚丫
+- 大圆头、小身体，翅膀在身体两侧
 
 6 种行为各有专属表情与动作：
-    idle      呼吸起伏 + 眨眼 + 围巾轻摆
-    happy     蹦跳 + 翅膀扇动 + 眯眯笑眼 + 星星
-    sad       身体下沉 + 眼泪 + 撇嘴 + 翅膀下垂
-    angry     皱眉倒竖 + 冒蒸汽 + 撇嘴
-    surprised 瞪大眼 + 张嘴 + 头顶感叹号 + 一颤
+    idle      呼吸起伏 + 眨眼
+    happy     蹦跳 + 翅膀扇动 + ^^ 眯眯眼 + 星星
+    sad       垂眉 + 眼泪 + 撇嘴 + 身体下沉
+    angry     皱眉倒竖 + 冒蒸汽
+    surprised 瞪大眼 + 张嘴 + 感叹号 + 一颤
     sleepy    闭眼 + 点头打盹 + 飘 zzz
 """
 from __future__ import annotations
@@ -21,16 +22,16 @@ from PyQt6.QtWidgets import QWidget
 
 from pet.pet_engine import PetEngine
 
-# ---------- 企鹅配色 ----------
-C_BODY = QColor(56, 66, 88)            # 深蓝黑（QQ 企鹅色）
-C_BODY_HI = QColor(78, 90, 116)        # 高光
-C_BELLY = QColor(250, 250, 252)        # 白色肚皮
-C_BEAK = QColor(255, 170, 60)          # 橙色嘴喙
-C_BEAK_DARK = QColor(235, 130, 30)
-C_SCARF = QColor(224, 72, 62)          # 红围巾
-C_SCARF_DARK = QColor(188, 52, 46)
+# ---------- 参考图配色 ----------
+C_BODY = QColor(22, 24, 30)            # 纯黑（略带蓝调柔和）
+C_BODY_HI = QColor(70, 76, 90)         # 高光
+C_BELLY = QColor(252, 252, 254)        # 白肚皮
+C_BEAK = QColor(248, 180, 20)          # 黄色嘴喙
+C_BEAK_DARK = QColor(225, 150, 10)
+C_SCARF = QColor(228, 46, 52)          # 红围巾
+C_SCARF_DARK = QColor(190, 32, 38)
 C_BLUSH = QColor(255, 140, 140, 170)
-C_OUTLINE = QColor(38, 46, 60)
+C_OUTLINE = QColor(15, 17, 22)
 C_WHITE = QColor(255, 255, 255)
 C_BUBBLE = QColor(255, 255, 255, 235)
 C_BUBBLE_BORDER = QColor(200, 170, 130)
@@ -84,11 +85,11 @@ class PetWidget(QWidget):
 
         painter.save()
         painter.translate(0, offset_y)
-        self._draw_extras(painter, behavior, t)   # 星星/蒸汽/zzz/感叹号/眼泪（身后）
+        self._draw_extras(painter, behavior, t)   # 星星/蒸汽/zzz/感叹号/眼泪
         self._draw_feet(painter, behavior, t)
-        self._draw_wings(painter, behavior, t)
         self._draw_body(painter, behavior, t)
         self._draw_scarf(painter, behavior, t)
+        self._draw_wings(painter, behavior, t)
         self._draw_face(painter, behavior, t)
         painter.restore()
 
@@ -114,7 +115,7 @@ class PetWidget(QWidget):
             return True
         return (self._blink_cycle % 4.0) < 0.15       # 每 4 秒眨一次
 
-    # ---------- 脚丫（走路摇摆） ----------
+    # ---------- 脚丫（黄色，走路摇摆） ----------
     def _draw_feet(self, p: QPainter, behavior: str, t: float) -> None:
         if behavior == "happy":
             w = math.sin(t * 8.0) * 5.0
@@ -124,198 +125,190 @@ class PetWidget(QWidget):
             w = math.sin(t * 3.0) * 2.0
         p.setPen(QPen(C_OUTLINE, 2))
         p.setBrush(C_BEAK)
-        p.drawEllipse(QRectF(94 + w, 186, 26, 13))
-        p.drawEllipse(QRectF(134 - w, 186, 26, 13))
+        p.drawEllipse(QRectF(96 + w, 222, 26, 13))
+        p.drawEllipse(QRectF(136 - w, 222, 26, 13))
 
-    # ---------- 翅膀（扇动） ----------
+    # ---------- 翅膀（黑色，扇动） ----------
     def _draw_wings(self, p: QPainter, behavior: str, t: float) -> None:
         if behavior == "happy":
-            angle = math.sin(t * 8.0) * 28.0
+            angle = math.sin(t * 8.0) * 30.0
         elif behavior == "surprised":
-            angle = -18.0
+            angle = -20.0
         elif behavior == "sad":
-            angle = 32.0
+            angle = 34.0
         elif behavior == "sleepy":
             angle = 18.0
         else:
             angle = math.sin(t * 2.5) * 6.0
         for side in (1, -1):
             p.save()
-            p.translate(120 + side * 58, 128)
-            p.rotate(side * (18.0 + angle))
+            p.translate(120 + side * 74, 150)
+            p.rotate(side * (16.0 + angle))
             p.setPen(QPen(C_OUTLINE, 2.5))
             p.setBrush(C_BODY)
-            p.drawEllipse(QRectF(-12, -22, 24, 44))
-            p.setBrush(C_BODY_HI)
-            p.setPen(Qt.PenStyle.NoPen)
-            p.drawEllipse(QRectF(-6, -16, 10, 22))
+            p.drawEllipse(QRectF(-11, -22, 22, 44))
             p.restore()
 
-    # ---------- 身体（蛋形） ----------
-    def _egg_path(self, cx: float, cy: float, rx: float, ry: float) -> QPainterPath:
+    # ---------- 身体（大圆头 + 小身体的整体轮廓） ----------
+    def _body_path(self) -> QPainterPath:
         path = QPainterPath()
-        path.moveTo(cx, cy - ry)
-        path.cubicTo(cx + rx * 0.72, cy - ry, cx + rx, cy - ry * 0.35,
-                     cx + rx, cy + ry * 0.18)
-        path.cubicTo(cx + rx, cy + ry * 0.95, cx + rx * 0.6, cy + ry,
-                     cx, cy + ry)
-        path.cubicTo(cx - rx * 0.6, cy + ry, cx - rx, cy + ry * 0.95,
-                     cx - rx, cy + ry * 0.18)
-        path.cubicTo(cx - rx, cy - ry * 0.35, cx - rx * 0.72, cy - ry,
-                     cx, cy - ry)
+        # 从头顶开始，右侧向下（头部宽、身体渐窄）
+        path.moveTo(120, 12)
+        path.cubicTo(120 + 66, 12, 186, 56, 186, 108)      # 头右侧
+        path.cubicTo(186, 150, 180, 186, 178, 200)         # 肩
+        path.cubicTo(172, 222, 148, 232, 120, 232)         # 右下收尾
+        path.cubicTo(92, 232, 68, 222, 62, 200)            # 左下
+        path.cubicTo(60, 186, 54, 150, 54, 108)            # 肩
+        path.cubicTo(54, 56, 120 - 66, 12, 120, 12)        # 头左侧
         path.closeSubpath()
         return path
 
     def _draw_body(self, p: QPainter, behavior: str, t: float) -> None:
-        # 头顶呆毛
-        p.setPen(QPen(C_OUTLINE, 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-        p.drawLine(QPointF(112, 78), QPointF(108, 64))
-        p.drawLine(QPointF(120, 77), QPointF(120, 62))
-        p.drawLine(QPointF(128, 78), QPointF(132, 64))
-
-        # 蛋形身体
         p.setPen(QPen(C_OUTLINE, 3))
         p.setBrush(C_BODY)
-        p.drawPath(self._egg_path(120, 138, 54, 60))
+        p.drawPath(self._body_path())
 
-        # 高光
+        # 头顶高光
         p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(90, 104, 132, 160))
-        p.drawEllipse(QRectF(82, 96, 14, 34))
+        p.setBrush(QColor(70, 76, 90, 150))
+        p.drawEllipse(QRectF(88, 34, 16, 40))
 
-        # 白色肚皮
+        # 白肚皮（下半部）
         p.setBrush(C_BELLY)
         p.setPen(QPen(C_OUTLINE, 2))
-        p.drawEllipse(QRectF(98, 152, 44, 34))
+        p.drawEllipse(QRectF(98, 162, 44, 56))
+        # 肚皮高光
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(255, 255, 255, 120))
+        p.drawEllipse(QRectF(108, 176, 14, 26))
 
     # ---------- 红围巾 ----------
     def _draw_scarf(self, p: QPainter, behavior: str, t: float) -> None:
         # 脖间围巾带
         p.setPen(QPen(C_SCARF_DARK, 2))
         p.setBrush(C_SCARF)
-        p.drawRoundedRect(QRectF(82, 146, 76, 16), 7, 7)
-        # 飘带（开心时摆动）
+        p.drawRoundedRect(QRectF(66, 108, 108, 18), 8, 8)
+        # 胸前垂尾（开心时摆动）
         sway = math.sin(t * 5.0) * 4.0 if behavior == "happy" else math.sin(t * 2.0) * 1.5
-        tail = QPainterPath(QPointF(146, 160))
-        tail.lineTo(150 + sway, 176)
-        tail.lineTo(138 + sway, 176)
+        tail = QPainterPath(QPointF(118, 126))
+        tail.lineTo(124 + sway, 162)
+        tail.lineTo(112 + sway, 162)
         tail.closeSubpath()
         p.drawPath(tail)
-        # 围巾穗
-        p.drawLine(QPointF(146, 176), QPointF(148 + sway, 182))
-        p.drawLine(QPointF(144, 176), QPointF(142 + sway, 182))
+        # 穗
+        p.drawLine(QPointF(124 + sway, 162), QPointF(127 + sway, 169))
+        p.drawLine(QPointF(118, 162), QPointF(117 + sway, 169))
+        p.drawLine(QPointF(112 + sway, 162), QPointF(109 + sway, 169))
 
-    # ---------- 面部 ----------
+    # ---------- 面部（黑头 + 白色大眼 + 黄色嘴喙） ----------
     def _draw_face(self, p: QPainter, behavior: str, t: float) -> None:
-        # 白色脸盘
-        p.setPen(QPen(C_OUTLINE, 2.5))
-        p.setBrush(C_BELLY)
-        p.drawEllipse(QRectF(88, 96, 64, 58))
-
         blink = self._is_blinking(behavior, t)
 
         # 腮红
         p.setBrush(C_BLUSH)
         p.setPen(Qt.PenStyle.NoPen)
-        p.drawEllipse(QRectF(84, 122, 20, 11))
-        p.drawEllipse(QRectF(136, 122, 20, 11))
+        p.drawEllipse(QRectF(70, 78, 20, 12))
+        p.drawEllipse(QRectF(150, 78, 20, 12))
 
-        # 眼睛
-        eye_w, eye_h = 19, 24
-        left = QRectF(96, 102, eye_w, eye_h)
-        right = QRectF(126, 102, eye_w, eye_h)
-        p.setPen(QPen(C_OUTLINE, 2.5))
+        # 眼睛：大白圆 + 黑瞳孔
+        eye_r = 16 if behavior == "surprised" else 14
+        left_c = QPointF(82, 56)
+        right_c = QPointF(121, 56)
+        p.setPen(QPen(C_OUTLINE, 2))
+        p.setBrush(C_WHITE)
+        p.drawEllipse(left_c, eye_r, eye_r)
+        p.drawEllipse(right_c, eye_r, eye_r)
 
-        if behavior == "surprised":
-            p.setBrush(C_WHITE)
-            p.drawEllipse(left.adjusted(-2, -2, 2, 2))
-            p.drawEllipse(right.adjusted(-2, -2, 2, 2))
-            p.setBrush(QColor(45, 50, 60))
-            p.drawEllipse(QRectF(102, 110, 8, 8))
-            p.drawEllipse(QRectF(132, 110, 8, 8))
-        elif behavior == "happy":
+        if behavior == "happy":
+            # ^ ^ 眯眯眼
+            p.setPen(QPen(C_OUTLINE, 3))
             p.setBrush(Qt.BrushStyle.NoBrush)
-            p.drawArc(left.adjusted(0, 6, 0, 6), 180 * 16, 180 * 16)   # ^ ^ 眯眯眼
-            p.drawArc(right.adjusted(0, 6, 0, 6), 180 * 16, 180 * 16)
+            p.drawArc(QRectF(70, 44, 24, 16), 180 * 16, 180 * 16)
+            p.drawArc(QRectF(109, 44, 24, 16), 180 * 16, 180 * 16)
         elif blink:
+            p.setPen(QPen(C_OUTLINE, 3))
             p.setBrush(Qt.BrushStyle.NoBrush)
-            p.drawArc(left.adjusted(0, 8, 0, 8), 0, 180 * 16)
-            p.drawArc(right.adjusted(0, 8, 0, 8), 0, 180 * 16)
+            p.drawArc(QRectF(68, 52, 28, 12), 0, 180 * 16)
+            p.drawArc(QRectF(107, 52, 28, 12), 0, 180 * 16)
         else:
-            p.setBrush(QColor(45, 50, 60))
-            p.drawEllipse(left)
-            p.drawEllipse(right)
+            # 瞳孔（惊愕时缩小）
+            pr = 4 if behavior == "surprised" else 6
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(C_OUTLINE)
+            p.drawEllipse(left_c, pr, pr)
+            p.drawEllipse(right_c, pr, pr)
+            # 高光
             p.setBrush(C_WHITE)
-            p.drawEllipse(QRectF(102, 108, 5, 5))
-            p.drawEllipse(QRectF(132, 108, 5, 5))
+            p.drawEllipse(QPointF(left_c.x() - 3, left_c.y() - 3), 2.5, 2.5)
+            p.drawEllipse(QPointF(right_c.x() - 3, right_c.y() - 3), 2.5, 2.5)
 
         # 眉毛（angry 倒竖 / sad 微垂）
         if behavior == "angry":
             p.setPen(QPen(C_OUTLINE, 4))
-            p.drawLine(QPointF(94, 98), QPointF(112, 104))
-            p.drawLine(QPointF(128, 104), QPointF(146, 98))
+            p.drawLine(QPointF(64, 30), QPointF(92, 42))
+            p.drawLine(QPointF(108, 42), QPointF(136, 30))
         elif behavior == "sad":
             p.setPen(QPen(C_OUTLINE, 3))
-            p.drawLine(QPointF(96, 98), QPointF(112, 102))
-            p.drawLine(QPointF(146, 98), QPointF(130, 102))
+            p.drawLine(QPointF(68, 32), QPointF(92, 40))
+            p.drawLine(QPointF(136, 32), QPointF(108, 40))
 
-        # 嘴喙（橙色）
+        # 黄色嘴喙（菱形）
         p.setPen(QPen(C_BEAK_DARK, 2))
         p.setBrush(C_BEAK)
         beak = QPainterPath()
-        beak.moveTo(120, 122)
-        beak.lineTo(129, 130)
-        beak.lineTo(120, 138)
-        beak.lineTo(111, 130)
+        beak.moveTo(120, 76)
+        beak.lineTo(130, 88)
+        beak.lineTo(120, 100)
+        beak.lineTo(110, 88)
         beak.closeSubpath()
         p.drawPath(beak)
 
-        # 嘴巴（喙下方）
+        # 嘴巴（喙下）
         p.setPen(QPen(C_OUTLINE, 2.5))
         if behavior == "happy":
-            p.drawArc(QRectF(104, 138, 32, 16), 0, 180 * 16)          # 微笑
+            p.drawArc(QRectF(104, 100, 32, 16), 0, 180 * 16)           # 微笑
         elif behavior == "sad":
-            p.drawArc(QRectF(106, 146, 28, 14), 180 * 16, 180 * 16)   # 撇嘴
+            p.drawArc(QRectF(106, 110, 28, 14), 180 * 16, 180 * 16)    # 撇嘴
         elif behavior == "surprised":
             p.setBrush(QColor(60, 50, 50))
-            p.drawEllipse(QRectF(110, 140, 20, 15))                   # 张嘴
+            p.drawEllipse(QRectF(110, 104, 20, 15))                    # 张嘴
         elif behavior == "angry":
-            p.drawArc(QRectF(108, 146, 24, 12), 180 * 16, 180 * 16)
+            p.drawArc(QRectF(108, 110, 24, 12), 180 * 16, 180 * 16)
         elif behavior == "sleepy":
-            p.drawEllipse(QRectF(114, 146, 12, 8))                    # 小 o
+            p.drawEllipse(QRectF(114, 110, 12, 8))                     # 小 o
         else:
-            p.drawArc(QRectF(106, 140, 28, 14), 0, 180 * 16)
+            p.drawArc(QRectF(106, 104, 28, 14), 0, 180 * 16)
 
     # ---------- 装饰元素 ----------
     def _draw_extras(self, p: QPainter, behavior: str, t: float) -> None:
         if behavior == "happy":
             for i in range(3):
-                x = 22 + i * 16
-                y = 36 + math.sin(t * 5 + i) * 7
+                x = 20 + i * 16
+                y = 34 + math.sin(t * 5 + i) * 7
                 self._star(p, x, y, 6)
         elif behavior == "angry":
             for i in range(3):
-                x = 112 + i * 16
-                y = 30 + (t * 40) % 16 - i * 2
+                x = 110 + i * 16
+                y = 26 + (t * 40) % 16 - i * 2
                 p.setPen(QPen(QColor(165, 165, 170), 2))
                 p.setBrush(QColor(232, 232, 235, 180))
                 p.drawEllipse(QRectF(x, y, 11, 11))
         elif behavior == "sleepy":
             for i in range(3):
-                x = 176 - (t * 28) % 46 + i * 12
-                y = 20 + i * 17
+                x = 172 - (t * 28) % 46 + i * 12
+                y = 16 + i * 17
                 p.setFont(QFont("PingFang SC", 13, QFont.Weight.Bold))
                 p.setPen(QPen(C_OUTLINE, 1))
                 p.drawText(QPointF(x, y), "z")
         elif behavior == "surprised":
             p.setFont(QFont("PingFang SC", 22, QFont.Weight.Bold))
             p.setPen(QPen(QColor(235, 130, 45), 2))
-            p.drawText(QPointF(152, 40), "!")
+            p.drawText(QPointF(152, 36), "!")
         elif behavior == "sad":
             p.setPen(QPen(QColor(120, 170, 255), 3))
             p.setBrush(QColor(170, 210, 255))
-            y = 70 + (t * 22) % 28
-            p.drawEllipse(QRectF(158, y, 9, 13))   # 泪滴滑落
+            y = 66 + (t * 22) % 28
+            p.drawEllipse(QRectF(160, y, 9, 13))   # 泪滴滑落
 
     @staticmethod
     def _star(p: QPainter, cx: float, cy: float, r: float) -> None:
