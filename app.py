@@ -15,8 +15,10 @@ import os
 import sys
 import threading
 
+import cv2
 from PyQt6.QtCore import QThread
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 from emotion.detector import EmotionDetector
 from emotion.smoother import EmotionSmoother
@@ -27,6 +29,25 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), "emotion", "models", "emoti
 
 # 演示模式的情绪序列（每 3 秒切换一次）
 _DEMO_SEQUENCE = ["happiness", "sadness", "anger", "surprise", "neutral", "sleepy"]
+
+
+class DebugWindow(QWidget):
+    """调试窗口：显示摄像头画面 + 人脸框 + 情绪标签。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setWindowTitle("EmotionCam (M3 调试)")
+        self._label = QLabel(self)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self._label)
+        self.resize(480, 360)
+
+    def show_frame(self, frame) -> None:
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb.shape
+        qimg = QImage(rgb.data, w, h, ch * w, QImage.Format.Format_RGB888).copy()
+        self._label.setPixmap(QPixmap.fromImage(qimg))
 
 
 def _run_demo_worker(pet_window, stop: threading.Event) -> None:
@@ -42,6 +63,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="情绪感知桌面宠物 (M3)")
     parser.add_argument("--demo", action="store_true", help="演示模式（无摄像头）")
     parser.add_argument("--device", type=int, default=0, help="摄像头设备号")
+    parser.add_argument("--debug", action="store_true",
+                        help="弹出调试窗口(人脸框+情绪)，并在终端打印检测状态")
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
@@ -66,7 +89,7 @@ def main() -> int:
 
     detector = EmotionDetector(MODEL_PATH)
     smoother = EmotionSmoother()
-    worker = EmotionWorker(detector, smoother, device=args.device)
+    worker = EmotionWorker(detector, smoother, device=args.device, debug=args.debug)
 
     thread = QThread()
     worker.moveToThread(thread)
@@ -74,6 +97,13 @@ def main() -> int:
     worker.emotion_changed.connect(win.apply_emotion)
     worker.face_status.connect(win.on_face_status)
     worker.error.connect(lambda e: print(f"[错误] 摄像头线程: {e}"))
+
+    debug_win = None
+    if args.debug:
+        debug_win = DebugWindow()
+        debug_win.show()
+        worker.debug_frame.connect(debug_win.show_frame)
+
     thread.start()
 
     print("🐾 情绪感知宠物已启动（Esc 退出）")

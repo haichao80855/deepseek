@@ -54,7 +54,7 @@ class EmotionDetector:
         self,
         model_path: str,
         yunet_path: str = DEFAULT_YUNET_PATH,
-        score_threshold: float = 0.7,
+        score_threshold: float = 0.6,
     ) -> None:
         self._sess = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
         self._input_name = self._sess.get_inputs()[0].name

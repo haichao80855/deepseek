@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import threading
+import time
 
 import AVFoundation
 import CoreMedia
@@ -88,6 +89,7 @@ class NativeCameraCapture:
         self._queue = dispatch.dispatch_queue_create(b"cam.capture", None)
         self._lock = threading.Lock()
         self._latest: np.ndarray | None = None
+        self._latest_ts: float = 0.0   # 最近一帧到达时间（单调时钟）
         self._first_frame = threading.Event()
         self._session = None
         self._running = False
@@ -141,12 +143,20 @@ class NativeCameraCapture:
             return
         with self._lock:
             self._latest = frame
+            self._latest_ts = time.monotonic()
         self._first_frame.set()
 
     # ---------- 对外接口（与 OpenCV CameraCapture 一致） ----------
     def read(self):
         with self._lock:
             return self._latest
+
+    def is_fresh(self, max_age: float = 1.0) -> bool:
+        """最近 max_age 秒内是否仍有新帧到达（检测摄像头是否卡住/休眠）。"""
+        with self._lock:
+            if self._latest is None:
+                return False
+            return time.monotonic() - self._latest_ts < max_age
 
     def release(self) -> None:
         if self._running and self._session is not None:
