@@ -55,8 +55,12 @@ def main() -> int:
 
     try:
         with CameraCapture(args.device) as cam:
+            print(f"✅ 摄像头已开启 (设备 {args.device})，正在实时识别……")
+            print("   请正对摄像头；窗口里出现绿色人脸框即识别中。按 q 退出。\n")
             frame_interval = 1.0 / args.fps
             next_frame_time = time.monotonic()
+            face_seen = False
+            last_noface_hint = 0.0
 
             while True:
                 # 限帧，避免每帧都跑模型浪费 CPU
@@ -81,6 +85,13 @@ def main() -> int:
                     continue
 
                 result = detector.analyze(frame)
+                if result is not None and not face_seen:
+                    face_seen = True
+                    print("👤 检测到人脸，开始识别情绪……")
+                elif result is None and face_seen:
+                    face_seen = False
+                    print("👤 人脸离开画面……")
+
                 emotion = smoother.update(result)
 
                 if emotion is not None:
@@ -98,9 +109,14 @@ def main() -> int:
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                     cv2.putText(frame, label, (x, y - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                    cv2.imshow("EmotionCam (按 q 退出)", frame)
-                    if cv2.waitKey(1) & 0xFF == ord("q"):
-                        break
+                    try:
+                        cv2.imshow("EmotionCam (按 q 退出)", frame)
+                        if cv2.waitKey(1) & 0xFF == ord("q"):
+                            break
+                    except cv2.error as e:
+                        # 当前环境无法创建 GUI 窗口（如无图形会话），自动退化为终端模式
+                        print(f"[提示] 无法显示调试窗口（{e}），已切换为终端输出模式。")
+                        args.headless = True
     except RuntimeError as e:
         print(f"[错误] {e}")
         return 1
