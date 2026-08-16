@@ -10,7 +10,7 @@ from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import QWidget
 
-from pet.pet_engine import BEHAVIORS, PetEngine
+from pet.pet_engine import BEHAVIORS, EMOTION_ZH, PetEngine
 from pet.pet_widget import PetWidget
 
 
@@ -67,6 +67,21 @@ class PetWindow(QWidget):
         # 双击让宠物说话
         self._pet.say()
         super().mouseDoubleClickEvent(event)
+
+    # ---------- M3: 情绪驱动 ----------
+    def apply_emotion(self, emotion: str) -> None:
+        """收到平滑后的情绪键，切换宠物行为。"""
+        behavior = self._engine.apply_emotion(emotion)
+        if behavior:
+            zh = EMOTION_ZH.get(emotion, emotion)
+            print(f"😊 情绪: {zh} → 行为: {behavior}")
+            # 切换后由 PetWidget._tick 自动弹气泡文案
+        self._pet.update()
+
+    def on_face_status(self, visible: bool) -> None:
+        """人脸离开/回来提示。"""
+        if not visible:
+            self._pet._show_msg("咦？你去哪啦？", 3.0)
 
     # ---------- 键盘 ----------
     def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802

@@ -48,6 +48,25 @@ BEHAVIORS: dict[str, dict] = {
     },
 }
 
+# FER+ 情绪 -> 宠物行为 映射（M3 联动）
+EMOTION_TO_BEHAVIOR: dict[str, str] = {
+    "neutral": "idle",
+    "happiness": "happy",
+    "sadness": "sad",
+    "anger": "angry",
+    "surprise": "surprised",
+    "fear": "sad",        # 恐惧 → 需要安抚
+    "disgust": "sad",     # 厌恶/不悦 → 安抚
+    "contempt": "idle",
+}
+
+# 情绪中文名（用于终端/气泡提示）
+EMOTION_ZH = {
+    "neutral": "平静", "happiness": "开心", "sadness": "难过",
+    "anger": "生气", "surprise": "惊讶", "fear": "恐惧",
+    "disgust": "厌恶", "contempt": "轻蔑",
+}
+
 
 class PetEngine:
     """宠物行为状态机：记录当前行为、管理切换与防抖。"""
@@ -76,3 +95,10 @@ class PetEngine:
     def say(self) -> str:
         """返回当前行为下的一条随机气泡文案。"""
         return random.choice(BEHAVIORS[self._current]["messages"])
+
+    def apply_emotion(self, emotion: str) -> str | None:
+        """M3：根据情绪键切换到对应行为。返回切换到的行为名，未切换返回 None。"""
+        behavior = EMOTION_TO_BEHAVIOR.get(emotion)
+        if behavior and self.set(behavior):
+            return behavior
+        return None
