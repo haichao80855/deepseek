@@ -46,6 +46,7 @@ def main() -> int:
 
     detector = EmotionDetector(MODEL_PATH)
     smoother = EmotionSmoother()
+    last_hint_time = 0.0
 
     print("=" * 56)
     print("  情绪感知 Demo (M1)")
@@ -67,9 +68,16 @@ def main() -> int:
 
                 frame = cam.read()
                 if frame is None:
-                    print("[提示] 未获取到画面。请检查摄像头权限："
-                          "系统设置 → 隐私与安全性 → 摄像头。")
-                    time.sleep(1.0)
+                    now_t = time.monotonic()
+                    if now_t - last_hint_time >= 5.0:
+                        last_hint_time = now_t
+                        print("[提示] 未获取到画面。常见原因：")
+                        print("  1. 摄像头权限未授予：系统设置 → 隐私与安全性 → 摄像头，"
+                              "打开你运行本程序的 App（终端/iTerm/VS Code）的开关，并重启该 App；")
+                        print("  2. 摄像头正被其他 App 占用（如 FaceTime、Zoom），请先关闭；")
+                        print("  3. 若你用的是 iPhone 连续互通相机，可先在系统设置 → 通用 → "
+                              "AirDrop 与隔空播放 → 连续互通相机 里关闭。")
+                    time.sleep(0.5)
                     continue
 
                 result = detector.analyze(frame)
