@@ -94,7 +94,7 @@ deepseek/
 | 阶段 | 内容 | 验收标准 | 预估 | 状态 |
 |---|---|---|---|---|
 | **M1** | 摄像头采集 + 表情识别 | 终端实时打印情绪标签，附置信度 | 半天 | ✅ 已完成 |
-| **M2** | PyQt6 透明宠物窗口 + 帧动画 | 桌面出现宠物，可手动切换行为 | 1 天 | ⬜ |
+| **M2** | PyQt6 透明宠物窗口 + 帧动画 | 桌面出现宠物，可手动切换行为 | 1 天 | ✅ 已完成 |
 | **M3** | 情绪驱动宠物联动 + 气泡文案 | 摄像头识别到情绪，宠物自动切换行为 | 1 天 | ⬜ |
 | **M4** | TTS 语音安抚 | 难过/生气时宠物开口安慰 | 半天 | ⬜ |
 | **M5** | 打磨：动画美化、开机自启、打包 .app | 双击即用的成品 | 按需 | ⬜ |
@@ -105,7 +105,8 @@ deepseek/
 
 ### M1 已完成 ✅
 
-- `emotion/capture.py` — OpenCV 摄像头采集
+- `emotion/capture.py` — macOS 优先原生 AVFoundation 采集（OpenCV 对 FaceTime 内置相机不可靠），失败回退 OpenCV
+- `emotion/native_capture.py` — pyobjc 原生采集（强制 BGRA 输出）
 - `emotion/detector.py` — YuNet 人脸检测 + FER+ 表情识别（8 类情绪）
 - `emotion/smoother.py` — EMA 情绪平滑（抑制抖动）
 - `main.py` — 终端实时情绪 Demo
@@ -118,7 +119,19 @@ deepseek/
 .venv/bin/python main.py --headless # 纯终端输出
 ```
 
-首次运行会弹出 macOS 摄像头授权框，允许即可（系统设置 → 隐私与安全性 → 摄像头）。
+### M2 已完成 ✅
+
+- `pet/pet_engine.py` — 行为状态机（6 种行为 + 切换防抖）
+- `pet/pet_widget.py` — QPainter 手绘动画宠物（呼吸/蹦跳/眼泪/蒸汽/zzz 等） + 气泡文案
+- `pet/main_window.py` — 无边框透明置顶窗口，可拖拽
+- `pet/__main__.py` — 入口
+
+**运行 M2 桌面宠物：**
+
+```bash
+.venv/bin/python -m pet
+# 按键: 1~6 切换行为(日常/开心/难过/生气/惊讶/困困), 空格或双击说话, Esc 退出
+```
 
 ### 安装依赖
 
