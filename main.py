@@ -16,7 +16,7 @@ import time
 
 import cv2
 
-from emotion.capture import CameraCapture
+from emotion.capture import create_camera
 from emotion.detector import EmotionDetector
 from emotion.smoother import EmotionSmoother
 
@@ -54,7 +54,7 @@ def main() -> int:
     print("=" * 56)
 
     try:
-        with CameraCapture(args.device) as cam:
+        with create_camera(args.device) as cam:
             print(f"✅ 摄像头已开启 (设备 {args.device})，正在实时识别……")
             print("   请正对摄像头；窗口里出现绿色人脸框即识别中。按 q 退出。\n")
             frame_interval = 1.0 / args.fps

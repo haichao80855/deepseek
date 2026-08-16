@@ -1,7 +1,14 @@
-# deepseek 依赖（M1: 摄像头 + 表情识别）
+# deepseek 依赖
 opencv-python>=4.9
 onnxruntime>=1.17
 numpy>=1.26
+
+# macOS 原生摄像头采集（OpenCV 对 FaceTime 内置相机不可靠，走原生 AVFoundation）
+pyobjc-core>=10.0
+pyobjc-framework-AVFoundation>=10.0
+pyobjc-framework-Quartz>=10.0
+pyobjc-framework-CoreMedia>=10.0
+pyobjc-framework-libdispatch>=10.0
 
 # 后续里程碑
 # PyQt6>=6.6      # M2 桌面宠物窗口
