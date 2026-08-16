@@ -36,3 +36,4 @@ coverage/
 
 # Local pip cache (venv install)
 .pip-cache/
+.clang-modcache/
