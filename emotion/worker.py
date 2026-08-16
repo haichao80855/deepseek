@@ -21,7 +21,7 @@ from emotion.detector import EMOTIONS, EMOTIONS_ZH
 class EmotionWorker(QObject):
     """运行在 QThread 里的情绪识别循环。"""
 
-    emotion_changed = pyqtSignal(str)   # 平滑后的情绪键（如 "happiness"）
+    emotion_changed = pyqtSignal(str, float)  # (情绪键, 该情绪置信度)
     face_status = pyqtSignal(bool)      # 是否检测到人脸
     error = pyqtSignal(str)             # 错误消息
     debug_frame = pyqtSignal(object)    # 调试模式：标注后的 BGR 帧（numpy）
@@ -91,10 +91,17 @@ class EmotionWorker(QObject):
 
                     emotion = self._smoother.update(result)
                     if emotion is not None:
-                        self.emotion_changed.emit(emotion)
+                        # 附带该情绪的置信度，便于诊断
+                        conf = 0.0
+                        if result is not None:
+                            try:
+                                conf = float(result["probs"][EMOTIONS.index(emotion)])
+                            except (ValueError, IndexError):
+                                conf = result.get("confidence", 0.0)
+                        self.emotion_changed.emit(emotion, conf)
                         if self._debug:
                             self._log_status(
-                                f"平滑输出: {EMOTIONS_ZH.get(emotion, emotion)}"
+                                f"平滑输出: {EMOTIONS_ZH.get(emotion, emotion)} ({conf:.0%})"
                             )
         except Exception as e:  # noqa: BLE001
             self.error.emit(str(e))

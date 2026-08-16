@@ -85,7 +85,25 @@ class PetWidget(QWidget):
         self._draw_face(painter, behavior, t)
         painter.restore()
 
+        self._draw_badge(painter)
         self._draw_bubble(painter)
+
+    def _draw_badge(self, p: QPainter) -> None:
+        """宠物下方常驻显示当前识别到的情绪（徽章），让反馈一直可见。"""
+        label = self._engine.emotion_label
+        if not label:
+            return
+        p.setFont(QFont("PingFang SC", 10))
+        fm = p.fontMetrics()
+        tw = fm.horizontalAdvance(label)
+        bw, bh = tw + 18, 20
+        bx = (240 - bw) / 2.0
+        by = 216.0
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(255, 255, 255, 200))
+        p.drawRoundedRect(QRectF(bx, by, bw, bh), 10, 10)
+        p.setPen(QPen(QColor(120, 80, 50), 1))
+        p.drawText(QRectF(bx, by, bw, bh), Qt.AlignmentFlag.AlignCenter, f"心情：{label}")
 
     # ---------- 行为参数 ----------
     def _behavior_offset(self, behavior: str, t: float) -> float:

@@ -76,6 +76,7 @@ class PetEngine:
             initial = "idle"
         self._current = initial
         self._switched_at = time.monotonic()
+        self.emotion_label: str | None = None  # 当前识别到的情绪中文名（徽章显示用）
 
     @property
     def current(self) -> str:

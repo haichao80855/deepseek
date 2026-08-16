@@ -55,7 +55,7 @@ def _run_demo_worker(pet_window, stop: threading.Event) -> None:
     idx = 0
     while not stop.wait(3.0):
         emo = _DEMO_SEQUENCE[idx % len(_DEMO_SEQUENCE)]
-        pet_window.apply_emotion(emo)
+        pet_window.apply_emotion(emo, 0.85)
         idx += 1
 
 

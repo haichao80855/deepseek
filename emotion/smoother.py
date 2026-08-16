@@ -20,7 +20,7 @@ class EmotionSmoother:
         self,
         ema_alpha: float = 0.6,       # EMA 平滑系数（越大跟随越快，越小越稳）
         window_seconds: float = 1.0,  # 输出主导情绪的时间窗口
-        min_confidence: float = 0.15, # 置信度低于此值的帧直接忽略
+        min_confidence: float = 0.05, # 置信度低于此值的帧直接忽略（阈值过高会挡住所有输出）
         min_hold_seconds: float = 1.0,# 新情绪需连续保持多久才切换
     ) -> None:
         self.alpha = ema_alpha

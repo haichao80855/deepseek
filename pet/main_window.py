@@ -69,12 +69,15 @@ class PetWindow(QWidget):
         super().mouseDoubleClickEvent(event)
 
     # ---------- M3: 情绪驱动 ----------
-    def apply_emotion(self, emotion: str) -> None:
+    def apply_emotion(self, emotion: str, confidence: float = 0.0) -> None:
         """收到平滑后的情绪键，切换宠物行为并给出可见反馈。"""
         zh = EMOTION_ZH.get(emotion, emotion)
+        self._engine.emotion_label = zh
         behavior = self._engine.apply_emotion(emotion)
+        # 每次都打印，便于观察识别情况（含置信度）
+        print(f"[情绪] {zh} ({confidence:.0%})", flush=True)
         if behavior:
-            print(f"😊 情绪: {zh} → 行为: {behavior}")
+            print(f"        → 行为: {behavior}")
             # 行为切换后由 PetWidget._tick 自动弹行为文案
         else:
             # 行为没变（如连续"平静"）也要让宠物有反应，避免"没动静"的观感
